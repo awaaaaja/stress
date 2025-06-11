@@ -1,0 +1,35 @@
+[x-cloak] { display: none !important; }
+.slider {
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.slider::-webkit-scrollbar {
+    display: none;
+}
+.glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.9);
+}
+.card-hover {
+    transition: all 0.3s ease;
+}
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+.gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.gradient-blue {
+    background: linear-gradient(135deg, #009EF7 0%, #0066CC 100%);
+}
+.gradient-green {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+.gradient-red {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+}
+.gradient-orange {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+}
