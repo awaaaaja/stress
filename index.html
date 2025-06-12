@@ -25,12 +25,6 @@
                         <p class="text-sm text-gray-500">Kelola Kas dengan Mudah</p>
                     </div>
                 </div>
-                <div class="hidden md:flex items-center space-x-4">
-                    <div class="text-right">
-                        <p class="text-sm text-gray-500">Total Saldo</p>
-                        <p class="text-lg font-bold text-gray-900" x-text="formatCurrency(getTotalBalance())"></p>
-                    </div>
-                </div>
             </div>
         </div>
     </header>
@@ -39,11 +33,11 @@
     <main class="max-w-7xl mx-auto pb-20 lg:pb-8">
         <!-- Dashboard -->
         <div x-show="activeTab === 'dashboard'" x-cloak class="p-4 lg:p-8">
-            <!-- Saldo Header -->
+            <!-- Total Keseluruhan -->
             <div class="gradient-blue rounded-2xl p-6 lg:p-8 text-white mb-8 shadow-xl">
                 <div class="text-center">
-                    <p class="text-blue-100 mb-3 text-lg">Total Saldo Kas</p>
-                    <h2 class="text-4xl lg:text-5xl font-bold mb-4" x-text="formatCurrency(getTotalBalance())"></h2>
+                    <p class="text-blue-100 mb-3 text-lg">Total Keseluruhan</p>
+                    <h2 class="text-4xl lg:text-5xl font-bold mb-4" x-text="formatCurrency(getTotalOverall())"></h2>
                     <div class="flex justify-center space-x-6 text-sm">
                         <div class="text-center">
                             <p class="text-blue-200">Bulan Aktif</p>
@@ -57,9 +51,9 @@
                 </div>
             </div>
 
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-6 mb-8">
-                <div class="bg-white rounded-2xl p-6 shadow-lg card-hover border border-gray-100">
+            <!-- Kas Masuk and Kas Keluar Cards -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div @click="showDetailModal('income')" class="bg-white rounded-2xl p-6 shadow-lg card-hover border border-gray-100 cursor-pointer transition-all duration-200 hover:shadow-xl">
                     <div class="flex items-center">
                         <div class="w-14 h-14 gradient-green rounded-xl flex items-center justify-center mr-4">
                             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,11 +63,13 @@
                         <div class="flex-1">
                             <p class="text-sm text-gray-500 mb-1">Kas Masuk</p>
                             <p class="font-bold text-lg text-gray-900" x-text="formatCurrency(getTotalIncome())"></p>
+                            <p class="text-sm text-gray-500 mt-1">Cash: <span x-text="formatCurrency(getCashIncome())"></span></p>
+                            <p class="text-sm text-gray-500">Transfer: <span x-text="formatCurrency(getTransferIncome())"></span></p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-2xl p-6 shadow-lg card-hover border border-gray-100">
+                <div @click="showDetailModal('expense')" class="bg-white rounded-2xl p-6 shadow-lg card-hover border border-gray-100 cursor-pointer transition-all duration-200 hover:shadow-xl">
                     <div class="flex items-center">
                         <div class="w-14 h-14 gradient-red rounded-xl flex items-center justify-center mr-4">
                             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,48 +79,8 @@
                         <div class="flex-1">
                             <p class="text-sm text-gray-500 mb-1">Kas Keluar</p>
                             <p class="font-bold text-lg text-gray-900" x-text="formatCurrency(getTotalExpense())"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-6 shadow-lg card-hover border border-gray-100">
-                    <div class="flex items-center">
-                        <div class="w-14 h-14 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center mr-4">
-                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm text-gray-500 mb-1">Cash</p>
-                            <p class="font-bold text-lg text-gray-900" x-text="formatCurrency(getCashTotal())"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-6 shadow-lg card-hover border border-gray-100">
-                    <div class="flex items-center">
-                        <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-700 rounded-xl flex items-center justify-center mr-4">
-                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm text-gray-500 mb-1">Transfer</p>
-                            <p class="font-bold text-lg text-gray-900" x-text="formatCurrency(getTransferTotal())"></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl p-6 shadow-lg card-hover border border-gray-100">
-                    <div class="flex items-center">
-                        <div class="w-14 h-14 gradient-orange rounded-xl flex items-center justify-center mr-4">
-                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="flex-1">
-                            <p class="text-sm text-gray-500 mb-1">Cicilan</p>
-                            <p class="font-bold text-lg text-gray-900" x-text="formatCurrency(getInstallmentTotal())"></p>
+                            <p class="text-sm text-gray-500 mt-1">Cash: <span x-text="formatCurrency(getCashExpense())"></span></p>
+                            <p class="text-sm text-gray-500">Transfer: <span x-text="formatCurrency(getTransferExpense())"></span></p>
                         </div>
                     </div>
                 </div>
@@ -147,13 +103,6 @@
                                     <div class="gradient-green h-3 rounded-full transition-all duration-500" :style="`width: ${month.paidPercentage}%`"></div>
                                 </div>
                                 <div class="flex justify-between text-sm mb-2">
-                                    <span class="text-orange-600 font-medium">Cicilan</span>
-                                    <span class="font-bold" x-text="month.installmentPercentage + '%'"></span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-3">
-                                    <div class="gradient-orange h-3 rounded-full transition-all duration-500" :style="`width: ${month.installmentPercentage}%`"></div>
-                                </div>
-                                <div class="flex justify-between text-sm mb-2">
                                     <span class="text-red-600 font-medium">Belum Bayar</span>
                                     <span class="font-bold" x-text="(100 - month.paidPercentage - month.installmentPercentage) + '%'"></span>
                                 </div>
@@ -166,7 +115,7 @@
                 </div>
             </div>
 
-            <!-- Anggota Belum Bayar -->
+            <!-- Status Pembayaran Bulan Ini -->
             <div class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
                 <h3 class="font-bold text-xl text-gray-900 mb-6">Status Pembayaran Bulan Ini</h3>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -184,7 +133,7 @@
                                         </div>
                                         <div>
                                             <p class="font-semibold text-gray-900" x-text="member.name"></p>
-                                            <p class="text-sm text-gray-500" x-text="member.division"></p>
+                                            <p class="text-sm text-gray-500" x-text="member.rayon"></p>
                                         </div>
                                     </div>
                                     <span class="text-red-600 font-bold text-lg" x-text="formatCurrency(settings.monthlyFee)"></span>
@@ -192,29 +141,25 @@
                             </template>
                         </div>
                     </div>
-                    
-                    <!-- Sedang Cicil -->
+
+                    <!-- Sudah Bayar -->
                     <div>
-                        <h4 class="font-semibold text-orange-600 mb-4">Sedang Cicil</h4>
+                        <h4 class="font-semibold text-green-600 mb-4">Sudah Bayar</h4>
                         <div class="space-y-3 max-h-80 overflow-y-auto">
-                            <template x-for="member in getInstallmentMembers()" :key="member.id">
-                                <div class="flex items-center justify-between p-4 bg-orange-50 rounded-xl border border-orange-100 card-hover">
+                            <template x-for="member in getPaidMembers()" :key="member.id">
+                                <div class="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-100 card-hover">
                                     <div class="flex items-center space-x-4">
-                                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                                            <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                             </svg>
                                         </div>
                                         <div>
                                             <p class="font-semibold text-gray-900" x-text="member.name"></p>
-                                            <p class="text-sm text-gray-500" x-text="member.division"></p>
-                                            <p class="text-xs text-orange-600" x-text="'Sisa: ' + formatCurrency(getMemberInstallmentRemaining(member.id))"></p>
+                                            <p class="text-sm text-gray-500" x-text="member.rayon"></p>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        <span class="text-orange-600 font-bold text-lg" x-text="formatCurrency(getMemberInstallmentPaid(member.id))"></span>
-                                        <p class="text-xs text-gray-500">dibayar</p>
-                                    </div>
+                                    <span class="text-green-600 font-bold text-lg" x-text="formatCurrency(settings.monthlyFee)"></span>
                                 </div>
                             </template>
                         </div>
@@ -265,7 +210,7 @@
                                 </div>
                                 <p class="text-sm text-gray-600 mb-3" x-text="member.address"></p>
                                 <div class="flex justify-between items-center">
-                                    <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium" x-text="member.division"></span>
+                                    <span class="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full font-medium" x-text="member.rayon"></span>
                                     <div x-show="getMemberInstallmentPaid(member.id) > 0" class="text-xs text-orange-600 font-medium">
                                         <span x-text="'Cicilan: ' + formatCurrency(getMemberInstallmentPaid(member.id))"></span>
                                     </div>
@@ -287,7 +232,6 @@
             <h2 class="text-2xl lg:text-3xl font-bold mb-6 text-gray-900">Transaksi Kas</h2>
 
             <!-- Payment Type Toggle -->
-           <!-- Payment Type Toggle -->
             <div class="bg-white rounded-2xl p-2 mb-8 shadow-lg border border-gray-100">
                 <div class="grid grid-cols-3 gap-2">
                     <button @click="paymentType = 'income'" 
@@ -309,140 +253,159 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Income Form -->
-                <div x-show="paymentType === 'income'" class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
-                    <h3 class="font-bold text-xl mb-6 text-gray-900">Form Kas Masuk</h3>
-                    <form @submit.prevent="addIncomeTransaction()">
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Anggota</label>
-                                <select x-model="incomeForm.memberId" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
-                                    <option value="">Pilih anggota...</option>
-                                    <template x-for="member in members" :key="member.id">
-                                        <option :value="member.id" x-text="member.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Metode Pembayaran</label>
-                                <select x-model="incomeForm.method" required class="w-full px-4 py-3 border border-gray-2xl focus:ring-2 focus:ring-blue-2xl shadow-sm">
-                                    <option value="cash">Cash</option>
-                                    <option value="transfer">Transfer</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-3">Bulan Dibayar</label>
-                                <div class="grid grid-cols-2 gap-3">
-                                    <template x-for="month in months" :key="month.id">
-                                        <label class="flex items-center p-3 border border-gray-2 py-2 rounded-xl cursor-pointer hover:bg-gray-2x transition">
-                                            <input type="checkbox" :value="month.id" x-model="incomeForm.months" class="mr-3 text-blue-500 focus:ring-blue-500 rounded">
-                                            <span class="text-sm font-medium" x-text="month.name"></span>
-                                        </label>
-                                    </template>
+                <!-- Forms Column -->
+                <div class="space-y-8">
+                    <!-- Income Form -->
+                    <div x-show="paymentType === 'income' && !isViewOnly" class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
+                        <h3 class="font-bold text-xl mb-6 text-gray-900">Form Kas Masuk</h3>
+                        <form @submit.prevent="addIncomeTransaction()">
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Input</label>
+                                    <select x-model="incomeForm.type" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                        <option value="member">Iuran Anggota</option>
+                                        <option value="manual">Manual</option>
+                                    </select>
                                 </div>
+                                <div x-show="incomeForm.type === 'member'">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Anggota</label>
+                                    <select x-model="incomeForm.memberId" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                        <option value="">Pilih anggota...</option>
+                                        <template x-for="member in members" :key="member.id">
+                                            <option :value="member.id" x-text="member.name"></option>
+                                        </template>
+                                    </select>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2 mt-2">Bulan Dibayar</label>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <template x-for="month in months" :key="month.id">
+                                            <label class="flex items-center p-3 border border-gray-200 py-2 rounded-xl cursor-pointer hover:bg-gray-50 transition">
+                                                <input type="checkbox" :value="month.id" x-model="incomeForm.months" class="mr-3 text-blue-500 focus:ring-blue-500 rounded">
+                                                <span class="text-sm font-medium" x-text="month.name"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Total Nominal</label>
+                                        <input type="text" :value="formatCurrency(incomeForm.months.length * settings.monthlyFee)" readonly
+                                               class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 font-bold text-lg">
+                                    </div>
+                                </div>
+                                <div x-show="incomeForm.type === 'manual'">
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nominal</label>
+                                    <input type="number" x-model.number="incomeForm.amount" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm" placeholder="Masukkan jumlah">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Metode Pembayaran</label>
+                                    <select x-model="incomeForm.method" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                        <option value="cash">Cash</option>
+                                        <option value="transfer">Transfer</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan</label>
+                                    <textarea x-model="incomeForm.description" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm"></textarea>
+                                </div>
+                                <button type="submit" class="w-full gradient-green text-white py-4 rounded-xl font-semibold shadow-lg card-hover">
+                                    Simpan Kas Masuk
+                                </button>
                             </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Total Nominal</label>
-                                <input type="text" :value="formatCurrency(incomeForm.months.length * settings.monthlyFee)" readonly
-                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 font-bold text-lg">
+                        </form>
+                    </div>
+
+                    <!-- Installment Form -->
+                    <div x-show="paymentType === 'installment' && !isViewOnly" class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
+                        <h3 class="font-bold text-xl mb-6 text-gray-900">Form Cicilan</h3>
+                        <form @submit.prevent="addInstallmentTransaction()">
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Anggota</label>
+                                    <select x-model="installmentForm.memberId" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                        <option value="">Pilih anggota...</option>
+                                        <template x-for="member in members" :key="member.id">
+                                            <option :value="member.id" x-text="member.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Bulan</label>
+                                    <select x-model="installmentForm.month" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                        <option value="">Pilih bulan...</option>
+                                        <template x-for="month in months" :key="month.id">
+                                            <option :value="month.id" x-text="month.name"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nominal Cicilan</label>
+                                    <input type="number" x-model="installmentForm.amount" required 
+                                           :max="settings.monthlyFee" min="1000" step="1000"
+                                           class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                    <p class="text-sm text-gray-500 mt-1">Maksimal: <span x-text="formatCurrency(settings.monthlyFee)"></span></p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Metode Pembayaran</label>
+                                    <select x-model="installmentForm.method" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                        <option value="cash">Cash</option>
+                                        <option value="transfer">Transfer</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan</label>
+                                    <textarea x-model="installmentForm.description" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm"></textarea>
+                                </div>
+                                <button type="submit" class="w-full gradient-orange text-white py-4 rounded-xl font-semibold shadow-lg card-hover">
+                                    Simpan Cicilan
+                                </button>
                             </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan</label>
-                                <textarea x-model="incomeForm.description" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm"></textarea>
+                        </form>
+                    </div>
+
+                    <!-- Expense Form -->
+                    <div x-show="paymentType === 'expense' && !isViewOnly" class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
+                        <h3 class="font-bold text-xl mb-6 text-gray-900">Form Kas Keluar</h3>
+                        <form @submit.prevent="addExpenseTransaction()">
+                            <div class="space-y-6">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Pengeluaran</label>
+                                    <input type="text" x-model="expenseForm.name" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Kategori</label>
+                                    <select x-model="expenseForm.category" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                        <option value="">Pilih kategori...</option>
+                                        <option value="operasional">Operasional</option>
+                                        <option value="konsumsi">Konsumsi</option>
+                                        <option value="transport">Transport</option>
+                                        <option value="lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nominal</label>
+                                    <input type="number" x-model="expenseForm.amount" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Metode Pembayaran</label>
+                                    <select x-model="expenseForm.method" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                                        <option value="cash">Cash</option>
+                                        <option value="transfer">Transfer</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan</label>
+                                    <textarea x-model="expenseForm.description" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm"></textarea>
+                                </div>
+                                <button type="submit" class="w-full gradient-red text-white py-4 rounded-xl font-semibold shadow-lg card-hover">
+                                    Simpan Kas Keluar
+                                </button>
                             </div>
-                            <button type="submit" class="w-full gradient-green text-white py-4 rounded-xl font-semibold shadow-lg card-hover">
-                                Simpan Kas Masuk
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
 
-                <!-- Installment Form -->
-                <div x-show="paymentType === 'installment'" class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
-                    <h3 class="font-bold text-xl mb-6 text-gray-900">Form Cicilan</h3>
-                    <form @submit.prevent="addInstallmentTransaction()">
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Anggota</label>
-                                <select x-model="installmentForm.memberId" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
-                                    <option value="">Pilih anggota...</option>
-                                    <template x-for="member in members" :key="member.id">
-                                        <option :value="member.id" x-text="member.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Bulan</label>
-                                <select x-model="installmentForm.month" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
-                                    <option value="">Pilih bulan...</option>
-                                    <template x-for="month in months" :key="month.id">
-                                        <option :value="month.id" x-text="month.name"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nominal Cicilan</label>
-                                <input type="number" x-model="installmentForm.amount" required 
-                                       :max="settings.monthlyFee" min="1000" step="1000"
-                                       class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
-                                <p class="text-sm text-gray-500 mt-1">Maksimal: <span x-text="formatCurrency(settings.monthlyFee)"></span></p>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Metode Pembayaran</label>
-                                <select x-model="installmentForm.method" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
-                                    <option value="cash">Cash</option>
-                                    <option value="transfer">Transfer</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan</label>
-                                <textarea x-model="installmentForm.description" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm"></textarea>
-                            </div>
-                            <button type="submit" class="w-full gradient-orange text-white py-4 rounded-xl font-semibold shadow-lg card-hover">
-                                Simpan Cicilan
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Expense Form -->
-                <div x-show="paymentType === 'expense'" class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
-                    <h3 class="font-bold text-xl mb-6 text-gray-900">Form Kas Keluar</h3>
-                    <form @submit.prevent="addExpenseTransaction()">
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nama Pengeluaran</label>
-                                <input type="text" x-model="expenseForm.name" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Kategori</label>
-                                <select x-model="expenseForm.category" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
-                                    <option value="">Pilih kategori...</option>
-                                    <option value="operasional">Operasional</option>
-                                    <option value="konsumsi">Konsumsi</option>
-                                    <option value="transport">Transport</option>
-                                    <option value="lainnya">Lainnya</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Nominal</label>
-                                <input type="number" x-model="expenseForm.amount" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Keterangan</label>
-                                <textarea x-model="expenseForm.description" rows="3" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm"></textarea>
-                            </div>
-                            <button type="submit" class="w-full gradient-red text-white py-4 rounded-xl font-semibold shadow-lg card-hover">
-                                Simpan Kas Keluar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Transaction History -->
-                <div class="lg:col-span-2 bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
+                <!-- Transaction History (Adjusted for full scroll) -->
+                <div class="bg-white rounded-2xl p-6 lg:p-8 shadow-lg border border-gray-100">
                     <h3 class="font-bold text-xl mb-6 text-gray-900">Riwayat Transaksi</h3>
-                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                    <div class="space-y-4 overflow-y-auto" style="max-height: calc(100vh - 300px);">
                         <template x-for="transaction in transactions.slice(-10)" :key="transaction.id">
                             <div class="flex justify-between items-center p-4 border-l-4 rounded-r-xl card-hover" 
                                  :class="transaction.type === 'income' ? 'border-green-500 bg-green-50' : transaction.type === 'installment' ? 'border-orange-500 bg-orange-50' : 'border-red-500 bg-red-50'">
@@ -727,8 +690,8 @@
                         <textarea x-model="memberForm.address" rows="2" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm"></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Divisi/Jabatan</label>
-                        <input type="text" x-model="memberForm.division" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Rayon</label>
+                        <input type="text" x-model="memberForm.rayon" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 shadow-sm">
                     </div>
                 </div>
                 <div class="flex gap-4 mt-8">
@@ -779,7 +742,7 @@
                         <template x-for="member in getMonthUnpaidMembers(selectedMonth)" :key="member.id">
                             <div class="p-4 bg-red-50 rounded-xl border border-red-100">
                                 <p class="font-semibold text-gray-900" x-text="member.name"></p>
-                                <p class="text-sm text-gray-500" x-text="member.division"></p>
+                                <p class="text-sm text-gray-500" x-text="member.rayon"></p>
                             </div>
                         </template>
                     </div>
@@ -787,7 +750,7 @@
                         <template x-for="member in getMonthInstallmentMembers(selectedMonth)" :key="member.id">
                             <div class="p-4 bg-orange-50 rounded-xl border border-orange-100">
                                 <p class="font-semibold text-gray-900" x-text="member.name"></p>
-                                <p class="text-sm text-gray-500" x-text="member.division"></p>
+                                <p class="text-sm text-gray-500" x-text="member.rayon"></p>
                                 <p class="text-xs text-orange-600 mt-1" x-text="'Dibayar: ' + formatCurrency(getMemberMonthInstallmentPaid(member.id, selectedMonth.id)) + ' / ' + formatCurrency(settings.monthlyFee)"></p>
                             </div>
                         </template>
@@ -796,10 +759,48 @@
                         <template x-for="member in getMonthPaidMembers(selectedMonth)" :key="member.id">
                             <div class="p-4 bg-green-50 rounded-xl border border-green-100">
                                 <p class="font-semibold text-gray-900" x-text="member.name"></p>
-                                <p class="text-sm text-gray-500" x-text="member.division"></p>
+                                <p class="text-sm text-gray-500" x-text="member.rayon"></p>
                             </div>
                         </template>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Modal for Kas Masuk/Keluar -->
+    <div x-show="showDetailModal" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-900" x-text="detailType === 'income' ? 'Detail Kas Masuk' : 'Detail Kas Keluar'"></h3>
+                    <button @click="showDetailModal = false" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <h4 class="font-semibold text-lg mb-4">Total</h4>
+                <p class="text-xl font-bold mb-4" x-text="formatCurrency(detailType === 'income' ? getTotalIncome() : getTotalExpense())"></p>
+                <h4 class="font-semibold text-lg mb-2">Breakdown</h4>
+                <div class="space-y-2">
+                    <p>Cash: <span class="font-bold" x-text="formatCurrency(detailType === 'income' ? getCashIncome() : getCashExpense())"></span></p>
+                    <p>Transfer: <span class="font-bold" x-text="formatCurrency(detailType === 'income' ? getTransferIncome() : getTransferExpense())"></span></p>
+                </div>
+                <h4 class="font-semibold text-lg mt-6 mb-2">Riwayat Terbaru</h4>
+                <div class="space-y-4">
+                    <template x-for="transaction in (detailType === 'income' ? transactions.filter(t => t.type === 'income') : transactions.filter(t => t.type === 'expense')).slice(0, 5)" :key="transaction.id">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                            <div>
+                                <p class="font-medium text-gray-900" x-text="transaction.description"></p>
+                                <p class="text-sm text-gray-500" x-text="new Date(transaction.date).toLocaleDateString('id-ID')"></p>
+                            </div>
+                            <span class="font-bold" :class="detailType === 'income' ? 'text-green-600' : 'text-red-600'" x-text="formatCurrency(transaction.amount)"></span>
+                        </div>
+                    </template>
+                    <p x-show="(detailType === 'income' ? transactions.filter(t => t.type === 'income') : transactions.filter(t => t.type === 'expense')).length === 0" class="text-center text-gray-500">Tidak ada riwayat.</p>
                 </div>
             </div>
         </div>
