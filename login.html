@@ -33,6 +33,13 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-blue-50 via-indigo-100 to-white min-h-screen flex items-center justify-center p-4 overflow-hidden" x-data="loginApp()">
@@ -102,8 +109,9 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
                     </svg>
                     Masuk Sekarang
-                </button>
-            </div>
+                </span>
+            </button>
+        </form>
 
         <!-- Error Message -->
         <div x-show="error" x-cloak class="mt-6 p-3 bg-red-50 text-red-600 rounded-xl text-sm text-center border border-red-100 animate-fade-in">
@@ -113,7 +121,7 @@
 
     <!-- Footer Hint -->
     <div class="absolute bottom-4 text-center text-gray-500 text-sm">
-        <p>&copy; 2025 KasaPro. Versi 1.0 | Butuh bantuan? Hubungi dukungan.</p>
+        <p>© 2025 KasaPro. Versi 1.0 | Butuh bantuan? Hubungi dukungan.</p>
     </div>
 
     <script>
@@ -126,34 +134,43 @@
                 },
                 error: '',
 
-                handleLogin() {
+                async handleLogin() {
                     if (!this.form.username || !this.form.password || !this.form.role) {
                         this.error = 'Harap lengkapi semua field.';
                         return;
                     }
-
-                    if (this.form.username === 'admin' && this.form.password === 'password') {
-                        localStorage.setItem('userRole', this.form.role);
-                        if (this.form.role === 'bendahara') {
-                            window.location.href = 'index.html';
-                        } else if (this.form.role === 'pengawas') {
-                            window.location.href = 'index.html?viewOnly=true';
+                    // Trim inputs to remove whitespace
+                    const loginData = {
+                        username: this.form.username.trim(),
+                        password: this.form.password.trim(),
+                        role: this.form.role.trim()
+                    };
+                    console.log('Login data being sent:', loginData);
+                    try {
+                        const response = await fetch('http://localhost:3000/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(loginData)
+                        });
+                        const responseData = await response.json();
+                        console.log('Server response:', responseData);
+                        if (response.ok) {
+                            const data = responseData;
+                            localStorage.setItem('isLoggedIn', 'true');
+                            localStorage.setItem('userRole', data.role);
+                            window.location.href = this.form.role === 'pengawas' ? 'index.html?viewOnly=true' : 'index.html';
+                        } else {
+                            this.error = 'Username, password, atau role salah. Coba lagi.';
                         }
-                    } else {
-                        this.error = 'Username atau password salah. Coba lagi.';
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        this.error = 'Terjadi kesalahan saat login. Coba lagi.';
                     }
                 }
             };
         }
     </script>
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.3s ease-in-out;
-        }
-    </style>
 </body>
 </html>
