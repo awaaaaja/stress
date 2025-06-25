@@ -9,6 +9,8 @@ function kasaProApp() {
         selectedMonth: null,
         monthDetailTab: 'unpaid',
         isViewOnly: false,
+        showDetailModal: false,
+        detailType: '',
 
         settings: {
             organizationName: 'Komunitas Kreatif Nusantara',
@@ -45,6 +47,7 @@ function kasaProApp() {
             name: '',
             category: '',
             amount: 0,
+            method: 'cash',
             description: ''
         },
 
@@ -80,7 +83,7 @@ function kasaProApp() {
         transactions: [
             { id: 1, type: 'income', memberId: 1, amount: 50000, method: 'cash', description: 'Iuran Juni 2025 - Ahmad Rizki', date: '2025-06-12' },
             { id: 2, type: 'income', memberId: 2, amount: 100000, method: 'transfer', description: 'Iuran Mei-Juni 2025 - Siti Nurhaliza', date: '2025-06-12' },
-            { id: 3, type: 'expense', amount: 75000, category: 'konsumsi', description: 'Konsumsi rapat bulanan', date: '2025-06-12' },
+            { id: 3, type: 'expense', amount: 75000, category: 'konsumsi', method: 'cash', description: 'Konsumsi rapat bulanan', date: '2025-06-12' },
             { id: 4, type: 'installment', memberId: 3, amount: 25000, method: 'cash', description: 'Cicilan Juni 2025 - Budi Santoso', date: '2025-06-12', month: 'juni-2025' },
             { id: 5, type: 'installment', memberId: 4, amount: 30000, method: 'transfer', description: 'Cicilan Juni 2025 - Dewi Kusuma', date: '2025-06-12', month: 'juni-2025' }
         ],
@@ -90,7 +93,7 @@ function kasaProApp() {
             { memberId: 2, months: ['mei-2025', 'juni-2025'], status: 'paid' },
             { memberId: 3, months: [], status: 'installment' },
             { memberId: 4, months: ['mei-2025'], status: 'installment' },
-            { id: 5, months: [], status: 'unpaid' }
+            { memberId: 5, months: [], status: 'unpaid' }
         ],
 
         installments: [
@@ -103,79 +106,118 @@ function kasaProApp() {
             this.isViewOnly = userRole === 'pengawas' || window.location.search.includes('viewOnly=true');
             this.loadData();
             this.startMonthSlider();
-            this.syncPaymentsWithTransactions(); // Sync payments on init
+            this.syncPaymentsWithTransactions();
         },
 
         loadData() {
-            const savedMembers = localStorage.getItem('members');
-            if (savedMembers) this.members = JSON.parse(savedMembers);
-            const savedTransactions = localStorage.getItem('transactions');
-            if (savedTransactions) this.transactions = JSON.parse(savedTransactions);
-            const savedPayments = localStorage.getItem('payments');
-            if (savedPayments) this.payments = JSON.parse(savedPayments);
-            const savedInstallments = localStorage.getItem('installments');
-            if (savedInstallments) this.installments = JSON.parse(savedInstallments);
-            const savedSettings = localStorage.getItem('settings');
-            if (savedSettings) this.settings = JSON.parse(savedSettings);
+            const savedData = localStorage.getItem('kasaProData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                this.settings = { ...this.settings, ...data.settings };
+                this.members = data.members || this.members;
+                this.transactions = data.transactions || this.transactions;
+                this.payments = data.payments || this.payments;
+                this.installments = data.installments || this.installments;
+            }
         },
 
         saveData() {
-            localStorage.setItem('members', JSON.stringify(this.members));
-            localStorage.setItem('transactions', JSON.stringify(this.transactions));
-            localStorage.setItem('payments', JSON.stringify(this.payments));
-            localStorage.setItem('installments', JSON.stringify(this.installments));
-            localStorage.setItem('settings', JSON.stringify(this.settings));
-            this.syncPaymentsWithTransactions(); // Ensure payments are in sync after save
-            this.updateMonthPercentages();
+            const data = {
+                settings: this.settings,
+                members: this.members,
+                transactions: this.transactions,
+                payments: this.payments,
+                installments: this.installments
+            };
+            localStorage.setItem('kasaProData', JSON.stringify(data));
+            this.syncPaymentsWithTransactions();
+        },
+
+        saveSettings() {
+            this.saveData();
+            alert('Pengaturan berhasil disimpan!');
+        },
+
+        logout() {
+            localStorage.removeItem('userRole');
+            window.location.href = '/login';
+        },
+
+        formatCurrency(amount) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(amount);
         },
 
         startMonthSlider() {
             const slider = this.$refs.monthSlider;
-            if (!slider) return;
+            let isDown = false;
+            let startX;
+            let scrollLeft;
 
-            let currentIndex = this.months.findIndex(m => m.id === this.settings.activeMonth);
-            if (currentIndex === -1) currentIndex = 0;
+            slider.addEventListener('mousedown', (e) => {
+                isDown = true;
+                startX = e.pageX - slider.offsetLeft;
+                scrollLeft = slider.scrollLeft;
+            });
 
-            const scrollWidth = slider.children[0]?.offsetWidth || 280;
-            setInterval(() => {
-                currentIndex = (currentIndex + 1) % this.months.length;
-                slider.scrollTo({
-                    left: currentIndex * (scrollWidth + 16),
-                    behavior: 'smooth'
-                });
-            }, 3000);
+            slider.addEventListener('mouseleave', () => {
+                isDown = false;
+            });
+
+            slider.addEventListener('mouseup', () => {
+                isDown = false;
+            });
+
+            slider.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - slider.offsetLeft;
+                const walk = (x - startX) * 1.5; // Speed of scroll
+                slider.scrollLeft = scrollLeft - walk;
+            });
         },
 
-        formatCurrency(amount) {
-            return 'Rp ' + new Intl.NumberFormat('id-ID').format(amount);
+        syncPaymentsWithTransactions() {
+            this.transactions.forEach(transaction => {
+                if (transaction.type === 'income' && transaction.memberId) {
+                    const payment = this.payments.find(p => p.memberId === transaction.memberId) || { memberId: transaction.memberId, months: [], status: 'paid' };
+                    transaction.months = transaction.months || [];
+                    payment.months = [...new Set([...payment.months, ...transaction.months])];
+                    if (!this.payments.find(p => p.memberId === payment.memberId)) this.payments.push(payment);
+                }
+            });
+            this.updateMonthPercentages();
         },
 
-        getTotalOverall() {
-            return this.getTotalIncome() - this.getTotalExpense();
+        updateMonthPercentages() {
+            this.months.forEach(month => {
+                const paidMembers = this.getMonthPaidMembers(month).length;
+                const totalMembers = this.members.length;
+                month.paidPercentage = totalMembers ? Math.round((paidMembers / totalMembers) * 100) : 0;
+                const installmentMembers = this.getMonthInstallmentMembers(month).length;
+                month.installmentPercentage = totalMembers ? Math.round((installmentMembers / totalMembers) * 100) : 0;
+            });
         },
 
-        getTotalIncome() {
-            return this.transactions.filter(t => t.type === 'income' || t.type === 'installment').reduce((sum, t) => sum + t.amount, 0);
+        addMember() {
+            if (!this.memberForm.name || !this.memberForm.phone || !this.memberForm.rayon) {
+                alert('Lengkapi semua field wajib.');
+                return;
+            }
+            if (this.memberForm.id) {
+                const index = this.members.findIndex(m => m.id === this.memberForm.id);
+                this.members[index] = { ...this.memberForm, id: this.memberForm.id };
+            } else {
+                this.memberForm.id = this.members.length ? Math.max(...this.members.map(m => m.id)) + 1 : 1;
+                this.members.push({ ...this.memberForm });
+            }
+            this.saveData();
+            this.showAddMember = false;
+            this.memberForm = { id: null, name: '', phone: '', address: '', rayon: '' };
         },
 
-        getTotalExpense() {
-            return this.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-        },
-
-        getCashIncome() {
-            return this.transactions.filter(t => (t.type === 'income' || t.type === 'installment') && t.method === 'cash').reduce((sum, t) => sum + t.amount, 0);
-        },
-
-        getTransferIncome() {
-            return this.transactions.filter(t => (t.type === 'income' || t.type === 'installment') && t.method === 'transfer').reduce((sum, t) => sum + t.amount, 0);
-        },
-
-        getCashExpense() {
-            return this.transactions.filter(t => t.type === 'expense' && t.method === 'cash').reduce((sum, t) => sum + t.amount, 0);
-        },
-
-        getTransferExpense() {
-            return this.transactions.filter(t => t.type === 'expense' && t.method === 'transfer').reduce((sum, t) => sum + t.amount, 0);
+        editMember(member) {
+            this.memberForm = { ...member };
+            this.showAddMember = true;
         },
 
         filteredMembers() {
@@ -185,38 +227,51 @@ function kasaProApp() {
             );
         },
 
-        addMember() {
-            if (this.isViewOnly) {
-                alert('Aksi ini tidak diizinkan untuk role Pengawas.');
-                return;
-            }
-            if (!this.memberForm.name || !this.memberForm.phone || !this.memberForm.address || !this.memberForm.rayon) {
-                alert('Semua field harus diisi.');
-                return;
-            }
-            if (this.memberForm.id) {
-                const index = this.members.findIndex(m => m.id === this.memberForm.id);
-                if (index !== -1) {
-                    this.members[index] = { ...this.memberForm };
-                }
-            } else {
-                this.members.push({
-                    id: this.members.length + 1,
-                    ...this.memberForm
-                });
-            }
-            this.saveData();
-            this.memberForm = { id: null, name: '', phone: '', address: '', rayon: '' };
-            this.showAddMember = false;
+        getPaidMembers() {
+            const activeMonth = this.settings.activeMonth;
+            return this.members.filter(member => {
+                const payment = this.payments.find(p => p.memberId === member.id);
+                return payment && payment.months.includes(activeMonth) && payment.status === 'paid';
+            });
         },
 
-        editMember(member) {
-            if (this.isViewOnly) {
-                alert('Aksi ini tidak diizinkan untuk role Pengawas.');
-                return;
-            }
-            this.memberForm = { ...member };
-            this.showAddMember = true;
+        getUnpaidMembers() {
+            const activeMonth = this.settings.activeMonth;
+            return this.members.filter(member => {
+                const payment = this.payments.find(p => p.memberId === member.id);
+                return !payment || !payment.months.includes(activeMonth) || payment.status === 'unpaid';
+            });
+        },
+
+        getMonthPaidMembers(month) {
+            return this.members.filter(member => {
+                const payment = this.payments.find(p => p.memberId === member.id);
+                return payment && payment.months.includes(month.id) && payment.status === 'paid';
+            });
+        },
+
+        getMonthUnpaidMembers(month) {
+            return this.members.filter(member => {
+                const payment = this.payments.find(p => p.memberId === member.id);
+                return !payment || !payment.months.includes(month.id) || payment.status === 'unpaid';
+            });
+        },
+
+        getMonthInstallmentMembers(month) {
+            return this.members.filter(member => {
+                const payment = this.payments.find(p => p.memberId === member.id);
+                return payment && payment.status === 'installment' && payment.months.includes(month.id);
+            });
+        },
+
+        getMemberInstallmentPaid(memberId) {
+            const installment = this.installments.find(i => i.memberId === memberId);
+            return installment ? installment.paid : 0;
+        },
+
+        getMemberMonthInstallmentPaid(memberId, monthId) {
+            const installment = this.installments.find(i => i.memberId === memberId && i.month === monthId);
+            return installment ? installment.paid : 0;
         },
 
         addIncomeTransaction() {
@@ -233,22 +288,25 @@ function kasaProApp() {
                 }
                 amount = this.incomeForm.months.length * this.settings.monthlyFee;
                 description = this.incomeForm.description || `Iuran ${this.incomeForm.months.map(m => this.months.find(mt => mt.id === m)?.name).join(', ')} - ${member.name}`;
-            } else {
+            } else if (this.incomeForm.type === 'manual') {
                 if (!this.incomeForm.amount || this.incomeForm.amount <= 0) {
                     alert('Masukkan jumlah yang valid.');
                     return;
                 }
-                amount = this.incomeForm.amount;
+                amount = Number(this.incomeForm.amount);
                 description = this.incomeForm.description || `Kas Masuk Manual - ${new Date().toLocaleDateString('id-ID')}`;
+            } else {
+                alert('Pilih tipe transaksi yang valid.');
+                return;
             }
 
             const transaction = {
-                id: this.transactions.length + 1,
+                id: this.transactions.length ? Math.max(...this.transactions.map(t => t.id)) + 1 : 1,
                 type: 'income',
                 memberId: this.incomeForm.type === 'member' ? Number(this.incomeForm.memberId) : null,
-                amount,
+                amount: amount,
                 method: this.incomeForm.method,
-                description,
+                description: description,
                 date: new Date().toISOString().split('T')[0]
             };
             this.transactions.push(transaction);
@@ -268,14 +326,14 @@ function kasaProApp() {
                 alert('Aksi ini tidak diizinkan untuk role Pengawas.');
                 return;
             }
-            const member = this.members.find(m => m.id === Number(this.installmentForm.memberId));
-            if (!member || !this.installmentForm.month || this.installmentForm.amount <= 0 || this.installmentForm.amount > this.settings.monthlyFee) {
-                alert('Lengkapi form dengan data yang valid.');
+            if (!this.installmentForm.memberId || !this.installmentForm.month || this.installmentForm.amount <= 0 || this.installmentForm.amount > this.settings.monthlyFee) {
+                alert('Lengkapi semua field dan pastikan nominal tidak melebihi iuran bulanan.');
                 return;
             }
 
+            const member = this.members.find(m => m.id === Number(this.installmentForm.memberId));
             const transaction = {
-                id: this.transactions.length + 1,
+                id: this.transactions.length ? Math.max(...this.transactions.map(t => t.id)) + 1 : 1,
                 type: 'installment',
                 memberId: Number(this.installmentForm.memberId),
                 amount: Number(this.installmentForm.amount),
@@ -286,25 +344,22 @@ function kasaProApp() {
             };
             this.transactions.push(transaction);
 
-            let installment = this.installments.find(i => i.memberId === Number(this.installmentForm.memberId) && i.month === this.installmentForm.month);
+            let installment = this.installments.find(i => i.memberId === transaction.memberId && i.month === transaction.month);
             if (installment) {
-                installment.paid += Number(this.installmentForm.amount);
-                installment.remaining = this.settings.monthlyFee - installment.paid;
+                installment.paid += transaction.amount;
+                installment.remaining = Math.max(0, this.settings.monthlyFee - installment.paid);
             } else {
                 this.installments.push({
-                    memberId: Number(this.installmentForm.memberId),
-                    month: this.installmentForm.month,
-                    paid: Number(this.installmentForm.amount),
-                    remaining: this.settings.monthlyFee - Number(this.installmentForm.amount)
+                    memberId: transaction.memberId,
+                    month: transaction.month,
+                    paid: transaction.amount,
+                    remaining: this.settings.monthlyFee - transaction.amount
                 });
             }
 
-            let payment = this.payments.find(p => p.memberId === Number(this.installmentForm.memberId));
-            if (payment) {
-                payment.status = 'installment';
-            } else {
-                this.payments.push({ memberId: Number(this.installmentForm.memberId), months: [], status: 'installment' });
-            }
+            const payment = this.payments.find(p => p.memberId === transaction.memberId) || { memberId: transaction.memberId, months: [], status: 'installment' };
+            if (!payment.months.includes(transaction.month)) payment.months.push(transaction.month);
+            if (!this.payments.find(p => p.memberId === payment.memberId)) this.payments.push(payment);
 
             this.saveData();
             this.installmentForm = { memberId: '', month: '', amount: 0, method: 'cash', description: '' };
@@ -315,171 +370,99 @@ function kasaProApp() {
                 alert('Aksi ini tidak diizinkan untuk role Pengawas.');
                 return;
             }
-            if (!this.expenseForm.name || !this.expenseForm.category || this.expenseForm.amount <= 0) {
-                alert('Lengkapi form dengan data yang valid.');
+            if (!this.expenseForm.name || !this.expenseForm.category || this.expenseForm.amount <= 0 || !this.expenseForm.method) {
+                alert('Lengkapi semua field, termasuk metode pembayaran.');
                 return;
             }
 
-            this.transactions.push({
-                id: this.transactions.length + 1,
+            const transaction = {
+                id: this.transactions.length ? Math.max(...this.transactions.map(t => t.id)) + 1 : 1,
                 type: 'expense',
                 amount: Number(this.expenseForm.amount),
                 category: this.expenseForm.category,
+                method: this.expenseForm.method,
                 description: this.expenseForm.description || this.expenseForm.name,
                 date: new Date().toISOString().split('T')[0]
-            });
+            };
+            this.transactions.push(transaction);
 
             this.saveData();
-            this.expenseForm = { name: '', category: '', amount: 0, description: '' };
+            this.expenseForm = { name: '', category: '', amount: 0, method: 'cash', description: '' };
         },
 
-        updateMonthPercentages() {
-            this.months.forEach(month => {
-                const totalMembers = this.members.length;
-                const paidCount = this.payments.filter(p => p.months.includes(month.id)).length;
-                const installmentCount = this.installments.filter(i => i.month === month.id && i.paid < this.settings.monthlyFee).length;
-
-                month.paidPercentage = Math.round((paidCount / totalMembers) * 100);
-                month.installmentPercentage = Math.round((installmentCount / totalMembers) * 100);
-            });
+        getTotalIncome() {
+            return this.transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0) || 0;
         },
 
-        syncPaymentsWithTransactions() {
-            this.members.forEach(member => {
-                const memberTransactions = this.transactions.filter(t => t.memberId === member.id);
-                let payment = this.payments.find(p => p.memberId === member.id) || { memberId: member.id, months: [], status: 'unpaid' };
-
-                if (!this.payments.find(p => p.memberId === member.id)) this.payments.push(payment);
-
-                const paidMonths = memberTransactions.filter(t => t.type === 'income').flatMap(t => t.months || []);
-                const installmentMonths = memberTransactions.filter(t => t.type === 'installment').map(t => t.month);
-
-                payment.months = [...new Set([...payment.months, ...paidMonths])];
-                payment.status = installmentMonths.length > 0 ? 'installment' : paidMonths.length > 0 ? 'paid' : 'unpaid';
-
-                const installment = this.installments.find(i => i.memberId === member.id && i.month === this.settings.activeMonth);
-                if (installment && installment.paid >= this.settings.monthlyFee) {
-                    payment.status = 'paid';
-                    payment.months.push(this.settings.activeMonth);
-                }
-            });
+        getTotalExpense() {
+            return this.transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0) || 0;
         },
 
-        getUnpaidMembers() {
-            return this.members.filter(m => {
-                const payment = this.payments.find(p => p.memberId === m.id);
-                return !payment || (!payment.months.includes(this.settings.activeMonth) && payment.status !== 'installment');
-            });
+        getTotalOverall() {
+            return this.getTotalIncome() - this.getTotalExpense() || 0;
         },
 
-        getPaidMembers() {
-            return this.members.filter(m => {
-                const payment = this.payments.find(p => p.memberId === m.id);
-                return payment && payment.months.includes(this.settings.activeMonth);
-            });
+        getCashIncome() {
+            return this.transactions.filter(t => t.type === 'income' && t.method === 'cash').reduce((sum, t) => sum + t.amount, 0) || 0;
         },
 
-        getInstallmentMembers() {
-            return this.members.filter(m => {
-                const payment = this.payments.find(p => p.memberId === m.id);
-                return payment && payment.status === 'installment';
-            });
+        getTransferIncome() {
+            return this.transactions.filter(t => t.type === 'income' && t.method === 'transfer').reduce((sum, t) => sum + t.amount, 0) || 0;
         },
 
-        getMemberInstallmentPaid(memberId) {
-            return this.installments
-                .filter(i => i.memberId === memberId && i.month === this.settings.activeMonth)
-                .reduce((sum, i) => sum + i.paid, 0);
+        getCashExpense() {
+            return this.transactions.filter(t => t.type === 'expense' && t.method === 'cash').reduce((sum, t) => sum + t.amount, 0) || 0;
         },
 
-        getMemberInstallmentRemaining(memberId) {
-            return this.installments
-                .filter(i => i.memberId === memberId && i.month === this.settings.activeMonth)
-                .reduce((sum, i) => sum + i.remaining, 0);
+        getTransferExpense() {
+            return this.transactions.filter(t => t.type === 'expense' && t.method === 'transfer').reduce((sum, t) => sum + t.amount, 0) || 0;
         },
 
-        getMonthUnpaidMembers(month) {
-            return this.members.filter(m => {
-                const payment = this.payments.find(p => p.memberId === m.id);
-                return !payment || !payment.months.includes(month.id);
-            });
+        getTotalCash() {
+            return (this.getCashIncome() - this.getCashExpense()) || 0;
         },
 
-        getMonthInstallmentMembers(month) {
-            return this.members.filter(m => {
-                const installment = this.installments.find(i => i.memberId === m.id && i.month === month.id);
-                return installment && installment.paid < this.settings.monthlyFee;
-            });
-        },
-
-        getMonthPaidMembers(month) {
-            return this.members.filter(m => {
-                const payment = this.payments.find(p => p.memberId === m.id);
-                return payment && payment.months.includes(month.id);
-            });
-        },
-
-        getMemberMonthInstallmentPaid(memberId, monthId) {
-            const installment = this.installments.find(i => i.memberId === memberId && i.month === monthId);
-            return installment ? installment.paid : 0;
+        getTotalTransfer() {
+            return (this.getTransferIncome() - this.getTransferExpense()) || 0;
         },
 
         getFilteredReports() {
-            let reports = [];
-            this.members.forEach(member => {
-                this.months.forEach(month => {
-                    const payment = this.payments.find(p => p.memberId === member.id);
-                    const installment = this.installments.find(i => i.memberId === member.id && i.month === month.id);
-                    const transaction = this.transactions.find(t => t.memberId === member.id && (t.month === month.id || t.type === 'income'));
+            return this.members.map(member => {
+                const payment = this.payments.find(p => p.memberId === member.id) || { months: [], status: 'unpaid' };
+                const installment = this.installments.find(i => i.memberId === member.id);
+                const transactions = this.transactions.filter(t => t.memberId === member.id && (t.type === 'income' || t.type === 'installment'));
 
-                    let status = 'unpaid';
-                    let amount = 0;
-                    let method = '-';
-                    let installmentPaid = 0;
+                return this.months.map(month => {
+                    const paid = payment.months.includes(month.id) && payment.status === 'paid';
+                    const installmentPaid = installment && installment.month === month.id ? installment.paid : 0;
+                    const amount = transactions.find(t => t.months?.includes(month.id) || t.month === month.id)?.amount || (paid ? this.settings.monthlyFee : installmentPaid);
+                    const method = transactions.find(t => t.months?.includes(month.id) || t.month === month.id)?.method;
 
-                    if (payment && payment.months.includes(month.id)) {
-                        status = 'paid';
-                        amount = this.settings.monthlyFee;
-                        method = transaction?.method || '-';
-                    } else if (installment) {
-                        status = 'installment';
-                        amount = installment.paid;
-                        method = transaction?.method || '-';
-                        installmentPaid = installment.paid;
+                    if (amount > 0 || paid) {
+                        return {
+                            id: `${member.id}-${month.id}`,
+                            memberId: member.id,
+                            memberName: member.name,
+                            month: month.name,
+                            status: paid ? 'paid' : installmentPaid > 0 ? 'installment' : 'unpaid',
+                            amount: amount,
+                            installmentPaid: installmentPaid,
+                            method: method
+                        };
                     }
-
-                    reports.push({
-                        id: `${member.id}-${month.id}`,
-                        memberName: member.name,
-                        month: month.name,
-                        status,
-                        amount,
-                        method,
-                        installmentPaid
-                    });
-                });
-            });
-
-            return reports.filter(report => {
+                }).filter(report => report);
+            }).flat().filter(report => {
                 const matchesSearch = !this.reportSearch || report.memberName.toLowerCase().includes(this.reportSearch.toLowerCase());
-                const matchesMonth = !this.reportFilter.month || report.id.includes(this.reportFilter.month);
+                const matchesMonth = !this.reportFilter.month || report.month.includes(this.reportFilter.month.split('-')[0]);
                 const matchesYear = !this.reportFilter.year || report.month.includes(this.reportFilter.year);
                 const matchesStatus = !this.reportFilter.status || report.status === this.reportFilter.status;
                 return matchesSearch && matchesMonth && matchesYear && matchesStatus;
             });
         },
 
-        saveSettings() {
-            if (this.isViewOnly) {
-                alert('Aksi ini tidak diizinkan untuk role Pengawas.');
-                return;
-            }
-            this.saveData();
-        },
-
-        logout() {
-            localStorage.removeItem('userRole');
-            window.location.href = 'login.html';
+        showDetailModal(type) {
+            this.detailType = type;
+            this.showDetailModal = true;
         }
     };
-}
+}z
